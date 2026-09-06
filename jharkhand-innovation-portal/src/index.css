@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary:       #1a6b3c;
+  --color-primary-dark:  #134d2c;
+  --color-primary-light: #e8f5ee;
+  --color-accent:        #f0a500;
+  --color-sidebar:       #0f3d24;
+
+  --font-sans: 'Inter', 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Reset ────────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f4f6f5;
+  color: #1a1a1a;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Sidebar scrollbar ───────────────────────────────────────────────────── */
+.sidebar-scroll::-webkit-scrollbar        { width: 4px; }
+.sidebar-scroll::-webkit-scrollbar-track  { background: transparent; }
+.sidebar-scroll::-webkit-scrollbar-thumb  { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+/* ── Status badge colours (used via className="status-<key>") ────────────── */
+.status-submitted                { background: #dbeafe; color: #1d4ed8; }
+.status-ai-analysis              { background: #ede9fe; color: #6d28d9; }
+.status-under-review             { background: #fef3c7; color: #92400e; }
+.status-validated                { background: #d1fae5; color: #065f46; }
+.status-university-matching      { background: #e0f2fe; color: #0369a1; }
+.status-university-accepted      { background: #dcfce7; color: #15803d; }
+.status-team-formed              { background: #fce7f3; color: #be185d; }
+.status-proposal-submitted       { background: #fff7ed; color: #c2410c; }
+.status-industry-collaboration   { background: #f0fdf4; color: #166534; }
+.status-prototype                { background: #fdf4ff; color: #7e22ce; }
+.status-pilot-testing            { background: #fffbeb; color: #b45309; }
+.status-deployed                 { background: #ecfdf5; color: #059669; }
+.status-impact-measured          { background: #f0f9ff; color: #0284c7; }
+.status-completed                { background: #d1fae5; color: #065f46; }
+
+/* ── Card hover ──────────────────────────────────────────────────────────── */
+.card-hover {
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+.card-hover:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+  transform: translateY(-1px);
+}
+
+/* ── Leaflet map ─────────────────────────────────────────────────────────── */
+.leaflet-container {
+  height: 300px;
+  width: 100%;
+  border-radius: 10px;
+  z-index: 0;
+}
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
+@keyframes progress-fill {
+  from { width: 0%; }
+}
+.progress-animate {
+  animation: progress-fill 1s ease forwards;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.4s ease forwards;
+}
+
+/* ── line-clamp utility (for older browsers) ─────────────────────────────── */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
