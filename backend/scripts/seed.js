@@ -3,10 +3,10 @@ const mongoose     = require('mongoose')
 const bcrypt       = require('bcryptjs')
 const connectDB    = require('../config/db')
 const User         = require('../models/User')
-const Challenge    = require('../models/Challenge')
-const Notification = require('../models/Notification')
-const SuccessStory = require('../models/SuccessStory')
-const PilotFeedback= require('../models/PilotFeedback')
+const Challenge    = require('../models/CitizenModels/Challenge')
+const Notification = require('../models/CitizenModels/Notification')
+const SuccessStory = require('../models/CitizenModels/SuccessStory')
+const PilotFeedback= require('../models/CitizenModels/')
 
 // ── Seed data ────────────────────────────────────────────────────────────────
 

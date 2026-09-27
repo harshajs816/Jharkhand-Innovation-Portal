@@ -1,23 +1,35 @@
 require('dotenv').config()
 require('express-async-errors')
 
-const express    = require('express')
-const cors       = require('cors')
-const helmet     = require('helmet')
-const morgan     = require('morgan')
-const rateLimit  = require('express-rate-limit')
-const path       = require('path')
+const express      = require('express')
+const cors         = require('cors')
+const helmet       = require('helmet')
+const morgan       = require('morgan')
+const rateLimit    = require('express-rate-limit')
+const path         = require('path')
 const cookieParser = require('cookie-parser')
 
-const connectDB  = require('./config/db')
+const connectDB = require('./config/db')
 
-// ── Route imports ─────────────────────────────────────────────────────────────
+// ── Citizen / shared route imports ───────────────────────────────────────────
 const authRoutes          = require('./routes/authRoutes')
-const challengeRoutes     = require('./routes/challengeRoutes')
-const notificationRoutes  = require('./routes/notificationRoutes')
-const successStoryRoutes  = require('./routes/successStoryRoutes')
-const pilotFeedbackRoutes = require('./routes/pilotFeedbackRoutes')
-const profileRoutes       = require('./routes/profileRoutes')
+const challengeRoutes     = require('./routes/CitizenRoutes/challengeRoutes')
+const notificationRoutes  = require('./routes/CitizenRoutes/notificationRoutes')
+const successStoryRoutes  = require('./routes/CitizenRoutes/successStoryRoutes')
+const pilotFeedbackRoutes = require('./routes/CitizenRoutes/pilotFeedbackRoutes')
+const profileRoutes       = require('./routes/CitizenRoutes/profileRoutes')
+
+// ── University route imports ──────────────────────────────────────────────────
+// NOTE: All university routes are mounted under /api/university/* to avoid
+//       conflicts with the citizen /api/challenges router.
+const uniChallengeRoutes = require('./routes/UniversityRoutes/challengeRoutes')
+const teamRoutes         = require('./routes/UniversityRoutes/teamRoutes')
+const proposalRoutes     = require('./routes/UniversityRoutes/proposalRoutes')
+const milestoneRoutes    = require('./routes/UniversityRoutes/milestoneRoutes')
+const governmentRoutes   = require('./routes/UniversityRoutes/governmentRoutes')
+const adminRoutes        = require('./routes/adminRoutes')
+const uniProfileRoutes   = require('./routes/UniversityRoutes/profileRoutes')
+const projectRoutes      = require('./routes/UniversityRoutes/projectRoutes')
 
 // ── Connect DB ────────────────────────────────────────────────────────────────
 connectDB()
@@ -30,7 +42,7 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
 app.use(cors({
   origin:      process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
-  methods:     ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  methods:     ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 }))
 
 app.use(express.json({ limit: '10mb' }))
@@ -42,20 +54,31 @@ if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'))
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 app.use('/api/auth', rateLimit({
   windowMs: 15 * 60 * 1000,
-  max:      30,
+  max:      100,
+  skip:     (req) => req.method === 'GET',
   message:  { success: false, message: 'Too many auth requests, please try again later.' },
 }))
 
-// ── Static file serving (uploads) ────────────────────────────────────────────
+// ── Static uploads ────────────────────────────────────────────────────────────
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
-// ── Routes ────────────────────────────────────────────────────────────────────
-app.use('/api/auth',           authRoutes)
-app.use('/api/challenges',     challengeRoutes)
-app.use('/api/notifications',  notificationRoutes)
-app.use('/api/success-stories',successStoryRoutes)
-app.use('/api/pilot-feedback', pilotFeedbackRoutes)
-app.use('/api/profile',        profileRoutes)
+// ── Citizen / shared routes ───────────────────────────────────────────────────
+app.use('/api/auth',            authRoutes)
+app.use('/api/challenges',      challengeRoutes)
+app.use('/api/notifications',   notificationRoutes)
+app.use('/api/success-stories', successStoryRoutes)
+app.use('/api/pilot-feedback',  pilotFeedbackRoutes)
+app.use('/api/profile',         profileRoutes)
+
+// ── University routes (all under /api/university) ────────────────────────────
+app.use('/api/university/challenges', uniChallengeRoutes)
+app.use('/api/university/teams',      teamRoutes)
+app.use('/api/university/proposals',  proposalRoutes)
+app.use('/api/university/milestones', milestoneRoutes)
+app.use('/api/university/projects',   projectRoutes)
+app.use('/api/university/profile',    uniProfileRoutes)
+app.use('/api/government',            governmentRoutes)
+app.use('/api/admin',                 adminRoutes)
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) =>

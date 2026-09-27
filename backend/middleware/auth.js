@@ -1,53 +1,190 @@
 const { verifyAccessToken } = require('../utils/jwt')
-const User                  = require('../models/User')
-const { unauthorized, forbidden } = require('../utils/response')
+const User = require('../models/User')
 
-/**
- * protect – verifies JWT and attaches req.user
- */
+const {
+  unauthorized,
+  forbidden
+} = require('../utils/response')
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Protect
+// Authentication middleware
+// ─────────────────────────────────────────────────────────────────────────────
+
 const protect = async (req, res, next) => {
   try {
+
     let token
-    if (req.headers.authorization?.startsWith('Bearer ')) {
-      token = req.headers.authorization.split(' ')[1]
-    }
-    if (!token) return unauthorized(res, 'No token provided. Please log in.')
 
+    // Get token from Authorization header
+    const authHeader = req.headers.authorization
+
+    if (
+      authHeader &&
+      authHeader.startsWith('Bearer ')
+    ) {
+      token = authHeader.split(' ')[1]
+    }
+
+
+    // Token missing
+    if (!token) {
+      return unauthorized(
+        res,
+        'No token provided. Please log in.'
+      )
+    }
+
+
+    // Verify JWT
     const decoded = verifyAccessToken(token)
-    const user    = await User.findById(decoded.id)
-    if (!user || !user.isActive) return unauthorized(res, 'User not found or deactivated.')
 
-    req.user = user
-    next()
-  } catch (err) {
-    if (err.name === 'TokenExpiredError') return unauthorized(res, 'Token expired. Please log in again.')
-    return unauthorized(res, 'Invalid token.')
-  }
-}
 
-/**
- * authorize(...roles) – role-based guard, used after protect
- */
-const authorize = (...roles) => (req, res, next) => {
-  if (!roles.includes(req.user.role)) {
-    return forbidden(res, `Role '${req.user.role}' is not allowed to access this resource.`)
-  }
-  next()
-}
+    // Find user
+    const user = await User
+      .findById(decoded.id)
+      .select('-password -refreshToken')
 
-/**
- * optionalAuth – attaches req.user if token present, otherwise continues
- */
-const optionalAuth = async (req, res, next) => {
-  try {
-    const header = req.headers.authorization
-    if (header?.startsWith('Bearer ')) {
-      const token   = header.split(' ')[1]
-      const decoded = verifyAccessToken(token)
-      req.user      = await User.findById(decoded.id)
+
+    // User not found
+    if (!user) {
+      return unauthorized(
+        res,
+        'User not found.'
+      )
     }
-  } catch (_) { /* ignore */ }
+
+
+    // Account inactive
+    if (!user.isActive) {
+      return unauthorized(
+        res,
+        'Your account has been deactivated.'
+      )
+    }
+
+
+    // Attach user to request
+    req.user = user
+
+    next()
+
+  } catch (err) {
+
+    console.error(
+      'Authentication error:',
+      err.message
+    )
+
+
+    // JWT expired
+    if (err.name === 'TokenExpiredError') {
+
+      return unauthorized(
+        res,
+        'Token expired. Please log in again.'
+      )
+
+    }
+
+
+    // Invalid JWT
+    return unauthorized(
+      res,
+      'Invalid token.'
+    )
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Authorize
+// Role-based authorization middleware
+// ─────────────────────────────────────────────────────────────────────────────
+
+const authorize = (...roles) => {
+
+  return (req, res, next) => {
+
+    // protect middleware should run before authorize
+    if (!req.user) {
+
+      return unauthorized(
+        res,
+        'Authentication required.'
+      )
+
+    }
+
+
+    // Check role
+    if (!roles.includes(req.user.role)) {
+
+      return forbidden(
+        res,
+        `Role '${req.user.role}' is not allowed to access this resource.`
+      )
+
+    }
+
+
+    next()
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Optional Authentication
+// Token ho to user attach hoga.
+// Token nahi ho to request continue karegi.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const optionalAuth = async (req, res, next) => {
+
+  try {
+
+    const authHeader = req.headers.authorization
+
+
+    if (
+      authHeader &&
+      authHeader.startsWith('Bearer ')
+    ) {
+
+      const token = authHeader.split(' ')[1]
+
+      const decoded = verifyAccessToken(token)
+
+
+      const user = await User
+        .findById(decoded.id)
+        .select('-password -refreshToken')
+
+
+      if (user && user.isActive) {
+        req.user = user
+      }
+
+    }
+
+  } catch (err) {
+
+    // Optional auth mein invalid token ke wajah se
+    // request ko block nahi karna hai.
+
+    req.user = null
+  }
+
+
   next()
 }
 
-module.exports = { protect, authorize, optionalAuth }
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+module.exports = {
+  protect,
+  authorize,
+  optionalAuth
+}
